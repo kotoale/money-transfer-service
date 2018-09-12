@@ -7,6 +7,8 @@ import com.task.rest.utils.serialization.BigDecimalSerializer;
 import java.math.BigDecimal;
 
 /**
+ * This class represents a response to a client request for create/read/update/delete account
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
 public class CrudAccountResponse {

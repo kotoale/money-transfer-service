@@ -14,6 +14,9 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 
 /**
+ * Main class of the Dropwizard application
+ * @see io.dropwizard.Application
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
 public class AccountServiceApp extends Application<AccountServiceConfiguration> {

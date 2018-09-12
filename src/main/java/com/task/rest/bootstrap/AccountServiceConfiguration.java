@@ -9,6 +9,9 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 /**
+ * An object representation of the YAML configuration file for Dropwizard application
+ * @see io.dropwizard.Configuration
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
 public class AccountServiceConfiguration extends Configuration {

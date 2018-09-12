@@ -7,6 +7,8 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 /**
+ * This class represents a client request for withdraw(deposit) money from(to) account
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
 public class DepositOrWithdrawRequest {

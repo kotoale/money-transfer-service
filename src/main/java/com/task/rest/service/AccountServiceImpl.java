@@ -1,56 +1,66 @@
 package com.task.rest.service;
 
-import com.task.rest.exceptions.InsufficientFundsException;
 import com.task.rest.exceptions.NoSuchAccountException;
 import com.task.rest.exceptions.TransferToTheSameAccountException;
 import com.task.rest.model.dao.AccountDao;
 import com.task.rest.model.dbo.Account;
 import com.task.rest.utils.concurrency.ConcurrentCache;
-import com.task.rest.utils.concurrency.HibernateConcurrentCache;
 
+import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * Implementation of the {@link AccountService}
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
+ * @see AccountService
  */
 public class AccountServiceImpl implements AccountService {
     private final AccountDao accountDao;
-    private final ConcurrentCache<Long, Lock> accountLocks = new HibernateConcurrentCache<>(ReentrantLock::new);
+    private final ConcurrentCache<Long, Lock> lockByIdCache;
 
-
-    public AccountServiceImpl(AccountDao accountDao) {
+    @Inject
+    public AccountServiceImpl(AccountDao accountDao, ConcurrentCache<Long, Lock> lockByIdCache) {
         this.accountDao = accountDao;
+        this.lockByIdCache = lockByIdCache;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Account create(Account account) {
         return accountDao.insert(account);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Account> listAll() {
         return accountDao.getAll();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Account get(Long id) {
         return accountDao.findById(id).orElseThrow(() -> new NoSuchAccountException(id));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Account withdraw(Long id, BigDecimal amount) {
-        Lock lock = accountLocks.get(id);
+        Lock lock = lockByIdCache.get(id);
         lock.lock();
         try {
             Account account = accountDao.findById(id).orElseThrow(() -> new NoSuchAccountException(id));
-            BigDecimal currentAmount = account.getAmount();
-            if (currentAmount.compareTo(amount) < 0) {
-                throw new InsufficientFundsException(currentAmount, amount);
-            }
-            account.setAmount(currentAmount.subtract(amount));
+            account.withdraw(amount);
             accountDao.update(account);
             return account;
         } finally {
@@ -58,14 +68,16 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Account deposit(Long id, BigDecimal amount) {
-        Lock lock = accountLocks.get(id);
+        Lock lock = lockByIdCache.get(id);
         lock.lock();
         try {
             Account account = accountDao.findById(id).orElseThrow(() -> new NoSuchAccountException(id));
-            BigDecimal currentAmount = account.getAmount();
-            account.setAmount(currentAmount.add(amount));
+            account.deposit(amount);
             accountDao.update(account);
             return account;
         } finally {
@@ -73,9 +85,12 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Account delete(Long id) {
-        Lock lock = accountLocks.get(id);
+        Lock lock = lockByIdCache.get(id);
         lock.lock();
         try {
             Account account = accountDao.findById(id).orElseThrow(() -> new NoSuchAccountException(id));
@@ -86,15 +101,18 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Account transfer(Long fromId, Long toId, BigDecimal amount) {
-        long firstId = Math.min(fromId, toId);
-        long secondId = Math.max(fromId, toId);
-        if (firstId == secondId) {
+        if (fromId.equals(toId)) {
             throw new TransferToTheSameAccountException();
         }
-        Lock firstLock = accountLocks.get(firstId);
-        Lock secondLock = accountLocks.get(secondId);
+        long firstId = Math.min(fromId, toId);
+        long secondId = Math.max(fromId, toId);
+        Lock firstLock = lockByIdCache.get(firstId);
+        Lock secondLock = lockByIdCache.get(secondId);
 
         firstLock.lock();
         try {
@@ -102,12 +120,8 @@ public class AccountServiceImpl implements AccountService {
             try {
                 Account fromAccount = accountDao.findById(fromId).orElseThrow(() -> new NoSuchAccountException(fromId));
                 Account toAccount = accountDao.findById(toId).orElseThrow(() -> new NoSuchAccountException(toId));
-                BigDecimal currentAmountFrom = fromAccount.getAmount();
-                if (currentAmountFrom.compareTo(amount) < 0) {
-                    throw new InsufficientFundsException(currentAmountFrom, amount);
-                }
-                fromAccount.setAmount(currentAmountFrom.subtract(amount));
-                toAccount.setAmount(toAccount.getAmount().add(amount));
+                fromAccount.withdraw(amount);
+                toAccount.deposit(amount);
                 accountDao.update(fromAccount);
                 accountDao.update(toAccount);
                 return fromAccount;

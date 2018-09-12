@@ -10,10 +10,14 @@ import com.task.rest.model.dbo.Account;
 import com.task.rest.service.AccountService;
 import io.dropwizard.hibernate.UnitOfWork;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -24,6 +28,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * Represents REST Service resource/controller with mappings http methods to corresponding implementations
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
 
@@ -31,15 +37,29 @@ import java.util.Optional;
 @Produces(MediaType.APPLICATION_JSON)
 public class AccountServiceResource {
 
+    public static final String INIT_AMOUNT_FIELD_NAME = "initialMoneyAmount";
+
     private final AccountService accountService;
 
+    /**
+     * default value of money amount for account creation
+     */
     private final BigDecimal initialMoneyAmount;
 
-    public AccountServiceResource(AccountService accountService, BigDecimal initialMoneyAmount) {
+    @Inject
+    public AccountServiceResource(AccountService accountService, @Named(INIT_AMOUNT_FIELD_NAME) BigDecimal initialMoneyAmount) {
         this.accountService = accountService;
         this.initialMoneyAmount = initialMoneyAmount;
     }
 
+    /**
+     * Mapping for the HTTP POST method for create new account
+     *
+     * @param request {@link CreateAccountRequest}
+     * @return {@link Response} object with http status Created and {@link CrudAccountResponse} in its body in case of successful completion
+     * @see CreateAccountRequest
+     * @see CrudAccountResponse
+     */
     @POST
     @UnitOfWork
     @Path("/create")
@@ -50,6 +70,12 @@ public class AccountServiceResource {
                 .build();
     }
 
+    /**
+     * Mapping for the HTTP GET method for get list of all account
+     *
+     * @return {@link Response} object with http status Ok and {@link ListAllResponse} in its body in case of successful completion
+     * @see ListAllResponse
+     */
     @GET
     @UnitOfWork
     @Path("/list")
@@ -60,16 +86,31 @@ public class AccountServiceResource {
                 .build();
     }
 
+    /**
+     * Mapping for the HTTP GET method for get account with specified id
+     *
+     * @param id - specified account id
+     * @return {@link Response} object with http status Ok and {@link CrudAccountResponse} in its body in case of successful completion
+     * @see CrudAccountResponse
+     */
     @GET
     @UnitOfWork
     public Response getById(@QueryParam("id") @NotNull Long id) {
         final Account account = accountService.get(id);
-        return Response.status(Response.Status.FOUND)
+        return Response.status(Response.Status.OK)
                 .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.READ))
                 .build();
     }
 
-    @POST
+    /**
+     * Mapping for the HTTP PUT method for withdraw money from the account
+     *
+     * @param request - {@link DepositOrWithdrawRequest}
+     * @return {@link Response} object with http status Ok and {@link CrudAccountResponse} in its body in case of successful completion
+     * @see DepositOrWithdrawRequest
+     * @see CrudAccountResponse
+     */
+    @PUT
     @UnitOfWork
     @Path("/withdraw")
     public Response withdraw(@Valid @NotNull DepositOrWithdrawRequest request) {
@@ -79,7 +120,15 @@ public class AccountServiceResource {
                 .build();
     }
 
-    @POST
+    /**
+     * Mapping for the HTTP PUT method for deposit money to the account
+     *
+     * @param request - {@link DepositOrWithdrawRequest}
+     * @return {@link Response} object with http status Ok and {@link CrudAccountResponse} in its body in case of successful completion
+     * @see DepositOrWithdrawRequest
+     * @see CrudAccountResponse
+     */
+    @PUT
     @UnitOfWork
     @Path("/deposit")
     public Response deposit(@Valid @NotNull DepositOrWithdrawRequest request) {
@@ -89,17 +138,32 @@ public class AccountServiceResource {
                 .build();
     }
 
-    @POST
+    /**
+     * Mapping for the HTTP PUT method for transfer money from one account to another
+     *
+     * @param request - {@link TransferRequest}
+     * @return {@link Response} object with http status Ok and {@link CrudAccountResponse} in its body in case of successful completion
+     * @see TransferRequest
+     * @see CrudAccountResponse
+     */
+    @PUT
     @UnitOfWork
     @Path("/transfer")
-    public Response deposit(@Valid @NotNull TransferRequest request) {
+    public Response transfer(@Valid @NotNull TransferRequest request) {
         final Account account = accountService.transfer(request.getFromId(), request.getToId(), request.getAmount());
         return Response.status(Response.Status.OK)
                 .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.UPDATED))
                 .build();
     }
 
-    @POST
+    /**
+     * Mapping for the HTTP DELETE method for delete specified account
+     *
+     * @param id - specified account id
+     * @return {@link Response} object with http status Ok and {@link CrudAccountResponse} in its body in case of successful completion
+     * @see CrudAccountResponse
+     */
+    @DELETE
     @UnitOfWork
     @Path("/delete")
     public Response delete(@QueryParam("id") @NotNull Long id) {

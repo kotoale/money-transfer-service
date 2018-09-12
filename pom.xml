@@ -37,6 +37,11 @@
                 <artifactId>h2</artifactId>
                 <version>1.4.196</version>
             </dependency>
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>4.2.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -49,6 +54,10 @@
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-hibernate</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

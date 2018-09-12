@@ -7,6 +7,8 @@ import com.task.rest.model.dbo.Account;
 import java.util.List;
 
 /**
+ * Represents a response for a client request to list all accounts
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
 public class ListAllResponse {

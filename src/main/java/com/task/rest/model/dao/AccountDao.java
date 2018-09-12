@@ -1,39 +1,46 @@
 package com.task.rest.model.dao;
 
 import com.task.rest.model.dbo.Account;
-import io.dropwizard.hibernate.AbstractDAO;
-import org.hibernate.SessionFactory;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
+ * Data access (CRUD) interface for {@link Account} object
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
-public class AccountDao extends AbstractDAO<Account> {
+public interface AccountDao {
+    /**
+     *
+     * @return list of all stored accounts
+     */
+    List<Account> getAll();
 
-    public AccountDao(SessionFactory sessionFactory) {
-        super(sessionFactory);
-    }
+    /**
+     *
+     * @param id id of the requested account
+     * @return {@link Optional} {@link Account} object for the specified id
+     * returns empty object if there is no account with specified id
+     */
+    Optional<Account> findById(Long id);
 
-    @SuppressWarnings("unchecked")
-    public List<Account> getAll() {
-        return (List<Account>) currentSession().createQuery("from Account").list();
-    }
+    /**
+     * Removes specified account from the storage
+     * @param account {@link Account} object to be deleted
+     */
+    void delete(Account account);
 
-    public Optional<Account> findById(Long id) {
-        return Optional.ofNullable(get(id));
-    }
+    /**
+     * Updates specified account in the storage
+     * @param account {@link Account} object to be updated
+     */
+    void update(Account account);
 
-    public void delete(Account account) {
-        currentSession().delete(account);
-    }
-
-    public void update(Account account) {
-        currentSession().saveOrUpdate(account);
-    }
-
-    public Account insert(Account account) {
-        return persist(account);
-    }
+    /**
+     * Inserts specified account to the storage
+     * @param account {@link Account} object to be inserted
+     * @return inserted {@link Account} object
+     */
+    Account insert(Account account);
 }

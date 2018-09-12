@@ -3,6 +3,7 @@ package com.task.rest.utils.concurrency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,13 +17,17 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
+ * Java Core implementation for the {@link ConcurrentCache}
+ *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
+ * @see ConcurrentCache
  */
 public class CoreJavaConcurrentCache<K, V> implements ConcurrentCache<K, V> {
     private final Map<K, ReferenceHolder<V>> map = new ConcurrentHashMap<>();
     private final Supplier<V> factory;
     private final Logger logger = LoggerFactory.getLogger(CoreJavaConcurrentCache.class);
 
+    @Inject
     public CoreJavaConcurrentCache(Supplier<V> factory) {
         this.factory = factory;
         ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
@@ -33,6 +38,9 @@ public class CoreJavaConcurrentCache<K, V> implements ConcurrentCache<K, V> {
         }));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public V get(K key) {
         ReferenceHolder<V> holder = map.computeIfAbsent(key, k -> new ReferenceHolder<>(factory));

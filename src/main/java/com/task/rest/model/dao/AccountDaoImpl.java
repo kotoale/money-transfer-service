@@ -1,10 +1,15 @@
 package com.task.rest.model.dao;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.task.rest.exceptions.NoSuchAccountException;
 import com.task.rest.model.dbo.Account;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,10 +29,13 @@ public class AccountDaoImpl extends AbstractDAO<Account> implements AccountDao {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("unchecked")
     @Override
     public List<Account> getAll() {
-        return (List<Account>) currentSession().createQuery("from Account").list();
+        CriteriaBuilder builder = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Account> criteria = builder.createQuery(Account.class);
+        Root<Account> contactRoot = criteria.from(Account.class);
+        criteria.select(contactRoot);
+        return currentSession().createQuery(criteria).getResultList();
     }
 
     /**
@@ -35,6 +43,7 @@ public class AccountDaoImpl extends AbstractDAO<Account> implements AccountDao {
      */
     @Override
     public Optional<Account> findById(Long id) {
+        Preconditions.checkArgument(id != null, "try to find account with null id");
         return Optional.ofNullable(get(id));
     }
 
@@ -42,23 +51,32 @@ public class AccountDaoImpl extends AbstractDAO<Account> implements AccountDao {
      * {@inheritDoc}
      */
     @Override
-    public void delete(Account account) {
+    public Account delete(Account account) {
+        Preconditions.checkArgument(account != null, "try to delete null account");
         currentSession().delete(account);
+        return account;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void update(Account account) {
-        currentSession().saveOrUpdate(account);
+    public Account update(Account account) {
+        Preconditions.checkArgument(account != null, "try to update null account");
+        Preconditions.checkArgument(account.getId() != null, "try to update contract with null id");
+        Account currentAccount = findById(account.getId()).orElseThrow(() -> new NoSuchAccountException(account.getId()));
+        currentAccount.setAmount(account.getAmount());
+        return account;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Account insert(Account account) {
-        return persist(account);
+    public Account create(Account account) {
+        Preconditions.checkArgument(account != null, "try to create null account");
+        Preconditions.checkArgument(account.getId() == null, "account for insertion can't have id");
+        currentSession().save(account);
+        return account;
     }
 }

@@ -2,6 +2,7 @@ package com.task.rest.model.dbo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.Preconditions;
 import com.task.rest.exceptions.InsufficientFundsException;
 import com.task.rest.utils.serialization.BigDecimalSerializer;
 
@@ -15,6 +16,7 @@ import javax.persistence.Table;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
  * This class represents accounts - domain objects for the money transfer service
@@ -66,8 +68,12 @@ public class Account {
      *
      * @param amountToDeposit amount to be deposited on the account
      * @return updated {@link Account} object
+     * @throws IllegalArgumentException when amountToDeposit is null or non-positive
      */
     public Account deposit(BigDecimal amountToDeposit) {
+        Preconditions.checkArgument(amountToDeposit != null, "amountToDeposit can't be null");
+        Preconditions.checkArgument(amountToDeposit.signum() > 0, "amountToDeposit can't be negative or zero");
+
         amount = amount.add(amountToDeposit);
         return this;
     }
@@ -77,10 +83,13 @@ public class Account {
      *
      * @param amountToWithdraw amount to be withdrawn from the account
      * @return updated {@link Account} object
+     * @throws IllegalArgumentException   when amountToWithdraw is null or non-positive
      * @throws InsufficientFundsException when current amount is less than amountToWithdraw
      * @see InsufficientFundsException
      */
     public Account withdraw(BigDecimal amountToWithdraw) {
+        Preconditions.checkArgument(amountToWithdraw != null, "amountToWithdraw can't be null");
+        Preconditions.checkArgument(amountToWithdraw.signum() > 0, "amountToWithdraw can't be negative or zero");
         if (amount.compareTo(amountToWithdraw) < 0) {
             throw new InsufficientFundsException(amount, amountToWithdraw, id);
         }
@@ -88,10 +97,29 @@ public class Account {
         return this;
     }
 
+    public Account(Long id, BigDecimal amount) {
+        this.id = id;
+        this.amount = amount;
+    }
+
     public Account(BigDecimal amount) {
         this.amount = amount;
     }
 
     public Account() {
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return Objects.equals(id, account.id) &&
+                ((amount == account.amount) || (amount != null && amount.compareTo(account.amount) == 0));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, amount);
     }
 }

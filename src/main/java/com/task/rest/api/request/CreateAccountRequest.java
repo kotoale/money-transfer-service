@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 import static com.task.rest.model.dbo.Account.PRECISION;
 import static com.task.rest.model.dbo.Account.SCALE;
@@ -26,4 +27,9 @@ public class CreateAccountRequest {
     public BigDecimal getInitAmount() {
         return initAmount;
     }
+
+    public CreateAccountRequest(BigDecimal initAmount) {
+        this.initAmount = initAmount;
+    }
+
 }

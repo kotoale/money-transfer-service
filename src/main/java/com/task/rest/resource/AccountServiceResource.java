@@ -63,8 +63,9 @@ public class AccountServiceResource {
     @POST
     @UnitOfWork
     @Path("/create")
-    public Response create(@Valid @NotNull CreateAccountRequest request) {
-        final Account account = accountService.create(new Account(Optional.ofNullable(request.getInitAmount()).orElse(initialMoneyAmount)));
+    public Response create(@Valid CreateAccountRequest request) {
+        BigDecimal reqInitValue = request != null ? request.getInitAmount() : null;
+        final Account account = accountService.create(Optional.ofNullable(reqInitValue).orElse(initialMoneyAmount));
         return Response.status(Response.Status.CREATED)
                 .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.CREATED))
                 .build();

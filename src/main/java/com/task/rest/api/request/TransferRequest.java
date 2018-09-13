@@ -6,6 +6,7 @@ import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 import static com.task.rest.model.dbo.Account.PRECISION;
 import static com.task.rest.model.dbo.Account.SCALE;
@@ -40,5 +41,14 @@ public class TransferRequest {
     @JsonProperty
     public BigDecimal getAmount() {
         return amount;
+    }
+
+    public TransferRequest() {
+    }
+
+    public TransferRequest(Long fromId, Long toId, BigDecimal amount) {
+        this.fromId = fromId;
+        this.toId = toId;
+        this.amount = amount;
     }
 }

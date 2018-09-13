@@ -1,13 +1,14 @@
 package com.task.rest.api.response;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.task.rest.utils.serialization.BigDecimalSerializer;
 
 import java.math.BigDecimal;
 
 /**
- * Represents a response to a client request for create/read/update/delete account
+ * Represents a response to a client request for create/read/saveOrUpdate/delete account
  *
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
@@ -16,13 +17,13 @@ public class CrudAccountResponse {
     @JsonSerialize(using = BigDecimalSerializer.class)
     private final BigDecimal amount;
 
-    private final OperationStatus operationStatus;
+    private final OperationStatus status;
 
     @JsonCreator
-    public CrudAccountResponse(long id, BigDecimal amount, OperationStatus operationStatus) {
+    public CrudAccountResponse(@JsonProperty("id") long id, @JsonProperty("amount") BigDecimal amount, @JsonProperty("status") OperationStatus status) {
         this.id = id;
         this.amount = amount;
-        this.operationStatus = operationStatus;
+        this.status = status;
     }
 
     public long getId() {
@@ -33,7 +34,7 @@ public class CrudAccountResponse {
         return amount;
     }
 
-    public OperationStatus getOperationStatus() {
-        return operationStatus;
+    public OperationStatus getStatus() {
+        return status;
     }
 }

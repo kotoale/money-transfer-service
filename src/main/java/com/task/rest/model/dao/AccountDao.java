@@ -12,35 +12,43 @@ import java.util.Optional;
  */
 public interface AccountDao {
     /**
-     *
      * @return list of all stored accounts
      */
     List<Account> getAll();
 
     /**
-     *
      * @param id id of the requested account
      * @return {@link Optional} {@link Account} object for the specified id
      * returns empty object if there is no account with specified id
+     * @throws IllegalArgumentException if id is null
      */
     Optional<Account> findById(Long id);
 
     /**
      * Removes specified account from the storage
+     *
      * @param account {@link Account} object to be deleted
+     * @throws IllegalArgumentException if account is null
+     * does nothing if account has null id or does not exist in the storage
      */
-    void delete(Account account);
+    Account delete(Account account);
 
     /**
      * Updates specified account in the storage
+     *
      * @param account {@link Account} object to be updated
+     * @return account
+     * @throws IllegalArgumentException                        if account is null or it does not have id
+     * @throws com.task.rest.exceptions.NoSuchAccountException when try to update not existed account
      */
-    void update(Account account);
+    Account update(Account account);
 
     /**
      * Inserts specified account to the storage
+     *
      * @param account {@link Account} object to be inserted
      * @return inserted {@link Account} object
+     * @throws IllegalArgumentException if account is null or it does have id
      */
-    Account insert(Account account);
+    Account create(Account account);
 }

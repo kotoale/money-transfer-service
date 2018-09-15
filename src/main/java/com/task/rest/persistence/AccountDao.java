@@ -1,5 +1,6 @@
-package com.task.rest.model.dao;
+package com.task.rest.persistence;
 
+import com.task.rest.exceptions.NoSuchAccountException;
 import com.task.rest.model.dbo.Account;
 
 import java.util.List;
@@ -29,7 +30,7 @@ public interface AccountDao {
      *
      * @param account {@link Account} object to be deleted
      * @throws IllegalArgumentException if account is null
-     * does nothing if account has null id or does not exist in the storage
+     *                                  does nothing if account has null id or does not exist in the storage
      */
     Account delete(Account account);
 
@@ -38,8 +39,9 @@ public interface AccountDao {
      *
      * @param account {@link Account} object to be updated
      * @return account
-     * @throws IllegalArgumentException                        if account is null or it does not have id
-     * @throws com.task.rest.exceptions.NoSuchAccountException when try to update not existed account
+     * @throws IllegalArgumentException if account is null or it does not have id
+     * @throws IllegalArgumentException if account has null amount
+     * @throws NoSuchAccountException   when try to update not existed account
      */
     Account update(Account account);
 
@@ -49,6 +51,7 @@ public interface AccountDao {
      * @param account {@link Account} object to be inserted
      * @return inserted {@link Account} object
      * @throws IllegalArgumentException if account is null or it does have id
+     * @throws IllegalArgumentException if account has null amount
      */
     Account create(Account account);
 }

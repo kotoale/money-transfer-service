@@ -1,4 +1,4 @@
-package com.task.rest.api.request;
+package com.task.rest.model.api.request;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.jackson.Jackson;

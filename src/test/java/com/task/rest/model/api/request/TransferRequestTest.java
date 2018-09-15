@@ -1,4 +1,4 @@
-package com.task.rest.api.request;
+package com.task.rest.model.api.request;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.jackson.Jackson;
@@ -12,15 +12,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Alexander Kotov (kotov.alex.22@gmail.com)
  */
-public class CreateAccountRequestTest {
+public class TransferRequestTest {
 
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
 
     @Test
     public void testDeserializationFromJSON() throws Exception {
-        CreateAccountRequest request = new CreateAccountRequest(new BigDecimal("100.00100000"));
+        TransferRequest request = new TransferRequest(1L, 2L, new BigDecimal("100.00100000"));
 
-        assertThat(MAPPER.readValue(fixture("fixtures/request/create-account-request.json"), CreateAccountRequest.class))
+        assertThat(MAPPER.readValue(fixture("fixtures/request/transfer-request.json"), TransferRequest.class))
                 .isEqualToComparingFieldByField(request);
     }
 

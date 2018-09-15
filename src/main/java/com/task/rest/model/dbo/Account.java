@@ -40,7 +40,7 @@ public class Account {
     @Column(name = "amount", nullable = false, precision = PRECISION, scale = SCALE)
     @NotNull
     @JsonProperty
-    @Digits(integer = PRECISION, fraction = SCALE)
+    @Digits(integer = PRECISION - SCALE, fraction = SCALE)
     @JsonSerialize(using = BigDecimalSerializer.class)
     private BigDecimal amount;
 
@@ -115,11 +115,12 @@ public class Account {
         if (o == null || getClass() != o.getClass()) return false;
         Account account = (Account) o;
         return Objects.equals(id, account.id) &&
-                ((amount == account.amount) || (amount != null && amount.compareTo(account.amount) == 0));
+                ((amount == account.amount) || (amount != null && account.amount != null && amount.compareTo(account.amount) == 0));
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(id, amount);
     }
+
 }

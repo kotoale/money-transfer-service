@@ -3,8 +3,8 @@ package com.task.rest.service;
 import com.task.rest.exceptions.InsufficientFundsException;
 import com.task.rest.exceptions.NoSuchAccountException;
 import com.task.rest.exceptions.TransferToTheSameAccountException;
-import com.task.rest.model.dao.AccountDao;
 import com.task.rest.model.dbo.Account;
+import com.task.rest.persistence.AccountDao;
 import com.task.rest.utils.concurrency.ConcurrentCache;
 import org.junit.Rule;
 import org.junit.Test;
@@ -22,7 +22,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -38,9 +37,9 @@ public class AccountServiceImplTest {
 
     private AccountServiceImpl accountService;
 
-    private CacheBuilder cacheBuilder = new CacheBuilder();
+    private CacheMockBuilder cacheMockBuilder = new CacheMockBuilder();
 
-    private final class CacheBuilder {
+    private final class CacheMockBuilder {
         ConcurrentCache<Long, Lock> buildCache() {
             ConcurrentCache<Long, Lock> cache = mock(ConcurrentCache.class);
 
@@ -63,12 +62,12 @@ public class AccountServiceImplTest {
     public ExpectedException expectedEx = ExpectedException.none();
 
     @Test
-    public void testCreate_ShouldThrowIllegalArgumentException_WhenInitAmountIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+    public void testCreate_ShouldThrowIllegalArgumentException_WhenAccountIsNull() throws Exception {
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("init amount amount is null");
+        expectedEx.expectMessage("try to create null account");
 
         // create
         accountService.create(null);
@@ -79,24 +78,65 @@ public class AccountServiceImplTest {
     }
 
     @Test
+    public void testCreate_ShouldThrowIllegalArgumentException_WhenIdIsNotNull() throws Exception {
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
+        AccountDao dao = mock(AccountDao.class);
+        accountService = new AccountServiceImpl(dao, cache);
+        expectedEx.expect(IllegalArgumentException.class);
+        expectedEx.expectMessage("try to create account with specified id");
+
+        Account account = new Account(1L, BigDecimal.ZERO);
+
+        // create
+        accountService.create(account);
+
+        // check
+        verifyZeroInteractions(cache);
+        verifyZeroInteractions(dao);
+    }
+
+    @Test
+    public void testCreate_ShouldThrowIllegalArgumentException_WhenAmountIsNull() throws Exception {
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
+        AccountDao dao = mock(AccountDao.class);
+        accountService = new AccountServiceImpl(dao, cache);
+        expectedEx.expect(IllegalArgumentException.class);
+        expectedEx.expectMessage("try to create account with null amount");
+
+        Account account = new Account(null);
+
+        // create
+        accountService.create(account);
+
+        // check
+        verifyZeroInteractions(cache);
+        verifyZeroInteractions(dao);
+    }
+
+    @Test
     public void testCreate() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
 
         // prepare mock
         BigDecimal amount = BigDecimal.TEN;
         Account account = mock(Account.class);
-        when(dao.create(any())).thenReturn(account);
+        when(account.getId()).thenReturn(null);
+        when(account.getAmount()).thenReturn(amount);
+        when(dao.create(account)).thenReturn(account);
 
         // create
-        Account result = accountService.create(amount);
+        Account result = accountService.create(account);
 
         // check
         verifyZeroInteractions(cache);
-        verifyZeroInteractions(account);
 
-        Mockito.verify(dao, times(1)).create(any());
+        Mockito.verify(account, times(1)).getId();
+        Mockito.verify(account, times(1)).getAmount();
+        verifyNoMoreInteractions(account);
+
+        Mockito.verify(dao, times(1)).create(account);
         verifyNoMoreInteractions(dao);
 
         assertTrue(account == result);
@@ -104,7 +144,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testListAll() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         // prepare mock
@@ -129,7 +169,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testGet_ShouldThrowIllegalArgumentException_WhenIdIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -144,7 +184,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testGet_ShouldThrowNoSuchAccountException_WhenAccountWithSuchIdDoesNotExist() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(NoSuchAccountException.class);
@@ -165,7 +205,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testGet() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         // prepare mock
@@ -189,7 +229,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testWithdraw_ShouldThrowIllegalArgumentException_WhenIdIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -203,7 +243,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testWithdraw_ShouldThrowIllegalArgumentException_WhenAmountIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -217,7 +257,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testWithdraw_ShouldThrowIllegalArgumentException_WhenAmountIsNegative() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -231,7 +271,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testWithdraw_ShouldThrowIllegalArgumentException_WhenAmountIsZero() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -245,7 +285,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testWithdraw_ShouldThrowNoSuchAccountException_WhenAccountWithSuchIdDoesNotExist() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(NoSuchAccountException.class);
@@ -266,7 +306,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testWithdraw_ShouldThrowInsufficientFundsException() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(InsufficientFundsException.class);
@@ -295,7 +335,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testWithdraw() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         // prepare mock
@@ -323,7 +363,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDeposit_ShouldThrowIllegalArgumentException_WhenIdIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -337,7 +377,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDeposit_ShouldThrowIllegalArgumentException_WhenAmountIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -351,7 +391,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDeposit_ShouldThrowIllegalArgumentException_WhenAmountIsNegative() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -365,7 +405,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDeposit_ShouldThrowIllegalArgumentException_WhenAmountIsZero() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -379,7 +419,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDeposit_ShouldThrowNoSuchAccountException_WhenAccountWithSuchIdDoesNotExist() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(NoSuchAccountException.class);
@@ -400,7 +440,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDeposit() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         // prepare mock
@@ -428,7 +468,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDelete_ShouldThrowIllegalArgumentException_WhenIdIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -442,7 +482,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDelete_ShouldThrowNoSuchAccountException_WhenAccountWithSuchIdDoesNotExist() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(NoSuchAccountException.class);
@@ -463,7 +503,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void testDelete() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
 
@@ -489,7 +529,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowIllegalArgumentException_WhenFirstIdIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -503,7 +543,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowIllegalArgumentException_WhenSecondIdIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -517,7 +557,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowIllegalArgumentException_WhenAmountIsNull() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -531,7 +571,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowIllegalArgumentException_WhenAmountIsNegative() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -545,7 +585,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowIllegalArgumentException_WhenAmountIsZero() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(IllegalArgumentException.class);
@@ -559,7 +599,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowTransferToTheSameAccountException_WhenIdsAreEqual() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(TransferToTheSameAccountException.class);
@@ -573,7 +613,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowNoSuchAccountException_WhenAccountWithFirstIdDoesNotExist() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(NoSuchAccountException.class);
@@ -597,7 +637,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowNoSuchAccountException_WhenAccountWithSecondIdDoesNotExist() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(NoSuchAccountException.class);
@@ -624,7 +664,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer_ShouldThrowInsufficientFundsException_WhenItIsNotEnoughFundsForTransfer() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
         expectedEx.expect(InsufficientFundsException.class);
@@ -648,7 +688,7 @@ public class AccountServiceImplTest {
         verify(cache, times(1)).get(secondId);
         verifyNoMoreInteractions(cache);
 
-        verify(accountFrom.withdraw(amountToWithdraw), times(1));
+        verify(accountFrom, times(1)).withdraw(amountToWithdraw);
         verifyNoMoreInteractions(accountFrom);
         verifyZeroInteractions(accountTo);
 
@@ -659,7 +699,7 @@ public class AccountServiceImplTest {
 
     @Test
     public void TestTransfer() throws Exception {
-        ConcurrentCache<Long, Lock> cache = cacheBuilder.buildCache();
+        ConcurrentCache<Long, Lock> cache = cacheMockBuilder.buildCache();
         AccountDao dao = mock(AccountDao.class);
         accountService = new AccountServiceImpl(dao, cache);
 

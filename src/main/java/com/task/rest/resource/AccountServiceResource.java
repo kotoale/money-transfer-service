@@ -1,11 +1,11 @@
 package com.task.rest.resource;
 
-import com.task.rest.api.request.CreateAccountRequest;
-import com.task.rest.api.request.DepositOrWithdrawRequest;
-import com.task.rest.api.request.TransferRequest;
-import com.task.rest.api.response.CrudAccountResponse;
-import com.task.rest.api.response.ListAllResponse;
-import com.task.rest.api.response.OperationStatus;
+import com.task.rest.model.api.request.CreateAccountRequest;
+import com.task.rest.model.api.request.DepositOrWithdrawRequest;
+import com.task.rest.model.api.request.TransferRequest;
+import com.task.rest.model.api.response.CrudAccountResponse;
+import com.task.rest.model.api.response.ListAllResponse;
+import com.task.rest.model.api.response.OperationStatus;
 import com.task.rest.model.dbo.Account;
 import com.task.rest.service.AccountService;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -64,10 +64,11 @@ public class AccountServiceResource {
     @UnitOfWork
     @Path("/create")
     public Response create(@Valid CreateAccountRequest request) {
-        BigDecimal reqInitValue = request != null ? request.getInitAmount() : null;
-        final Account account = accountService.create(Optional.ofNullable(reqInitValue).orElse(initialMoneyAmount));
+        BigDecimal reqInitValue = request != null ? request.getAmount() : null;
+        Account account = new Account(Optional.ofNullable(reqInitValue).orElse(initialMoneyAmount));
+        account = accountService.create(account);
         return Response.status(Response.Status.CREATED)
-                .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.CREATED))
+                .entity(new CrudAccountResponse(account, OperationStatus.CREATED))
                 .build();
     }
 
@@ -99,7 +100,7 @@ public class AccountServiceResource {
     public Response getById(@QueryParam("id") @NotNull Long id) {
         final Account account = accountService.get(id);
         return Response.status(Response.Status.OK)
-                .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.READ))
+                .entity(new CrudAccountResponse(account, OperationStatus.READ))
                 .build();
     }
 
@@ -117,7 +118,7 @@ public class AccountServiceResource {
     public Response withdraw(@Valid @NotNull DepositOrWithdrawRequest request) {
         final Account account = accountService.withdraw(request.getId(), request.getAmount());
         return Response.status(Response.Status.OK)
-                .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.UPDATED))
+                .entity(new CrudAccountResponse(account, OperationStatus.UPDATED))
                 .build();
     }
 
@@ -135,7 +136,7 @@ public class AccountServiceResource {
     public Response deposit(@Valid @NotNull DepositOrWithdrawRequest request) {
         final Account account = accountService.deposit(request.getId(), request.getAmount());
         return Response.status(Response.Status.OK)
-                .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.UPDATED))
+                .entity(new CrudAccountResponse(account, OperationStatus.UPDATED))
                 .build();
     }
 
@@ -153,7 +154,7 @@ public class AccountServiceResource {
     public Response transfer(@Valid @NotNull TransferRequest request) {
         final Account account = accountService.transfer(request.getFromId(), request.getToId(), request.getAmount());
         return Response.status(Response.Status.OK)
-                .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.UPDATED))
+                .entity(new CrudAccountResponse(account, OperationStatus.UPDATED))
                 .build();
     }
 
@@ -170,7 +171,7 @@ public class AccountServiceResource {
     public Response delete(@QueryParam("id") @NotNull Long id) {
         final Account account = accountService.delete(id);
         return Response.status(Response.Status.OK)
-                .entity(new CrudAccountResponse(account.getId(), account.getAmount(), OperationStatus.DELETED))
+                .entity(new CrudAccountResponse(account, OperationStatus.DELETED))
                 .build();
     }
 }

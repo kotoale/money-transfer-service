@@ -1,4 +1,4 @@
-package com.task.rest.api.response;
+package com.task.rest.model.api.response;
 
 /**
  * Possible statuses for operations requested by clients

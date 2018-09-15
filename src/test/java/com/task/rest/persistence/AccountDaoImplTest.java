@@ -1,4 +1,4 @@
-package com.task.rest.model.dao;
+package com.task.rest.persistence;
 
 import com.task.rest.exceptions.NoSuchAccountException;
 import com.task.rest.model.dbo.Account;
@@ -59,7 +59,7 @@ public class AccountDaoImplTest {
         accounts.add(new Account(new BigDecimal("100.0345")));
 
         // create
-        database.inTransaction(() -> accounts.forEach(acc -> accountDao.create(acc)));
+        database.inTransaction(() -> accounts.forEach(acc -> database.getSessionFactory().getCurrentSession().save(acc)));
 
         // check
         assertTrue(CollectionUtils.isEqualCollection(accounts, accountDao.getAll()));
@@ -88,10 +88,10 @@ public class AccountDaoImplTest {
 
         // create
         Account account = new Account(new BigDecimal("100.03"));
-        accountDao.create(account);
+        database.inTransaction(() -> database.getSessionFactory().getCurrentSession().save(account));
 
-        assertThat(database.getSessionFactory().getCurrentSession().get(Account.class, 1L)).
-                isEqualToComparingFieldByField(accountDao.findById(1L).orElse(null));
+        assertThat(accountDao.findById(1L).orElse(null)).
+                isEqualToComparingFieldByField(database.getSessionFactory().getCurrentSession().get(Account.class, 1L));
     }
 
     @Test
@@ -101,6 +101,7 @@ public class AccountDaoImplTest {
 
         accountDao.delete(new Account(BigDecimal.ZERO));
         accountDao.delete(new Account(1L, BigDecimal.ZERO));
+        // check
         assertThat(database.getSessionFactory().getCurrentSession().get(Account.class, 1L)).isNull();
     }
 
@@ -120,7 +121,7 @@ public class AccountDaoImplTest {
 
         // create
         Account account = new Account(new BigDecimal("100.03"));
-        accountDao.create(account);
+        database.inTransaction(() -> database.getSessionFactory().getCurrentSession().save(account));
 
         // post create check
         assertThat(database.getSessionFactory().getCurrentSession().get(Account.class, 1L)).isEqualToComparingFieldByField(account);
@@ -147,6 +148,22 @@ public class AccountDaoImplTest {
     }
 
     @Test
+    public void testUpdate_ShouldThrowIllegalArgumentException_WhenAmountIsNull() throws Exception {
+        expectedEx.expect(IllegalArgumentException.class);
+        expectedEx.expectMessage("try to update contract with null amount");
+        // create
+        Account account = new Account(new BigDecimal("100.03"));
+        database.inTransaction(() -> database.getSessionFactory().getCurrentSession().save(account));
+
+        // update explicitly with account having the same id
+        Account newAccount = new Account(1L, null);
+        accountDao.update(newAccount);
+
+        // check
+        assertThat(database.getSessionFactory().getCurrentSession().get(Account.class, 1L)).isEqualToComparingFieldByField(newAccount);
+    }
+
+    @Test
     public void testUpdate_ShouldThrowNoSuchAccountException_WhenAccountDoesNotExist() throws Exception {
         expectedEx.expect(NoSuchAccountException.class);
         expectedEx.expectMessage("There's no account with id: 1");
@@ -157,7 +174,7 @@ public class AccountDaoImplTest {
     public void testUpdate() throws Exception {
         // create
         Account account = new Account(new BigDecimal("100.03"));
-        accountDao.create(account);
+        database.inTransaction(() -> database.getSessionFactory().getCurrentSession().save(account));
 
         // update explicitly with account having the same id
         Account newAccount = new Account(1L, new BigDecimal("55"));
@@ -168,18 +185,6 @@ public class AccountDaoImplTest {
     }
 
     @Test
-    public void testUpdate_ShouldUpdateContractImplicitly() throws Exception {
-        // create
-        Account account = new Account(BigDecimal.ZERO);
-        accountDao.create(account);
-
-        account.setAmount(BigDecimal.TEN);
-
-        // check
-        assertThat(database.getSessionFactory().getCurrentSession().get(Account.class, 1L)).isEqualToComparingFieldByField(account);
-    }
-
-    @Test
     public void testCrete_ShouldThrowIllegalArgumentException_WhenAccountIsNull() throws Exception {
         expectedEx.expect(IllegalArgumentException.class);
         expectedEx.expectMessage("try to create null account");
@@ -187,9 +192,17 @@ public class AccountDaoImplTest {
     }
 
     @Test
+    public void testCrete_ShouldThrowIllegalArgumentException_WhenAccountHasNullAmount() throws Exception {
+        expectedEx.expect(IllegalArgumentException.class);
+        expectedEx.expectMessage("try to create account with null amount");
+        Account account = new Account(null);
+        accountDao.create(account);
+    }
+
+    @Test
     public void testCrete_ShouldThrowIllegalArgumentException_WhenAccountHasId() throws Exception {
         expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("account for insertion can't have id");
+        expectedEx.expectMessage("try to create account with specified id");
 
         Account account = new Account(1L, new BigDecimal("100.03"));
         accountDao.create(account);

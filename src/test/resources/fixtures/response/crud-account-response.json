@@ -1,5 +1,7 @@
 {
-  "id": "1",
-  "amount": "100.00100000",
+  "account": {
+    "id": "1",
+    "amount": "100.00100000"
+  },
   "status": "UPDATED"
 }

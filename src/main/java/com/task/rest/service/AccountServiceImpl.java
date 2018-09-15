@@ -3,8 +3,8 @@ package com.task.rest.service;
 import com.google.common.base.Preconditions;
 import com.task.rest.exceptions.NoSuchAccountException;
 import com.task.rest.exceptions.TransferToTheSameAccountException;
-import com.task.rest.model.dao.AccountDao;
 import com.task.rest.model.dbo.Account;
+import com.task.rest.persistence.AccountDao;
 import com.task.rest.utils.concurrency.ConcurrentCache;
 
 import javax.inject.Inject;
@@ -32,9 +32,10 @@ public class AccountServiceImpl implements AccountService {
      * {@inheritDoc}
      */
     @Override
-    public Account create(BigDecimal amount) {
-        Preconditions.checkArgument(amount != null, "init amount amount is null");
-        Account account = new Account(amount);
+    public Account create(Account account) {
+        Preconditions.checkArgument(account != null, "try to create null account");
+        Preconditions.checkArgument(account.getId() == null, "try to create account with specified id");
+        Preconditions.checkArgument(account.getAmount() != null, "try to create account with null amount");
         return accountDao.create(account);
     }
 
@@ -68,7 +69,6 @@ public class AccountServiceImpl implements AccountService {
         try {
             Account account = accountDao.findById(id).orElseThrow(() -> new NoSuchAccountException(id));
             account.withdraw(amount);
-            //accountDao.update(account);
             return account;
         } finally {
             lock.unlock();
@@ -88,7 +88,6 @@ public class AccountServiceImpl implements AccountService {
         try {
             Account account = accountDao.findById(id).orElseThrow(() -> new NoSuchAccountException(id));
             account.deposit(amount);
-            //accountDao.update(account);
             return account;
         } finally {
             lock.unlock();
@@ -136,8 +135,6 @@ public class AccountServiceImpl implements AccountService {
                 Account toAccount = accountDao.findById(toId).orElseThrow(() -> new NoSuchAccountException(toId));
                 fromAccount.withdraw(amount);
                 toAccount.deposit(amount);
-                //accountDao.update(fromAccount);
-                //accountDao.update(toAccount);
                 return fromAccount;
             } finally {
                 secondLock.unlock();

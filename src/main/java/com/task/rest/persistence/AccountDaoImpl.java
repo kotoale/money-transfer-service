@@ -1,4 +1,4 @@
-package com.task.rest.model.dao;
+package com.task.rest.persistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -64,6 +64,7 @@ public class AccountDaoImpl extends AbstractDAO<Account> implements AccountDao {
     public Account update(Account account) {
         Preconditions.checkArgument(account != null, "try to update null account");
         Preconditions.checkArgument(account.getId() != null, "try to update contract with null id");
+        Preconditions.checkArgument(account.getAmount() != null, "try to update contract with null amount");
         Account currentAccount = findById(account.getId()).orElseThrow(() -> new NoSuchAccountException(account.getId()));
         currentAccount.setAmount(account.getAmount());
         return account;
@@ -75,7 +76,8 @@ public class AccountDaoImpl extends AbstractDAO<Account> implements AccountDao {
     @Override
     public Account create(Account account) {
         Preconditions.checkArgument(account != null, "try to create null account");
-        Preconditions.checkArgument(account.getId() == null, "account for insertion can't have id");
+        Preconditions.checkArgument(account.getId() == null, "try to create account with specified id");
+        Preconditions.checkArgument(account.getAmount() != null, "try to create account with null amount");
         currentSession().save(account);
         return account;
     }

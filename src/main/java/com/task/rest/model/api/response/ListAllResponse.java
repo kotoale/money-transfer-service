@@ -1,4 +1,4 @@
-package com.task.rest.api.response;
+package com.task.rest.model.api.response;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,11 +1,10 @@
-package com.task.rest.api.request;
+package com.task.rest.model.api.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import java.math.BigDecimal;
-import java.util.Objects;
 
 import static com.task.rest.model.dbo.Account.PRECISION;
 import static com.task.rest.model.dbo.Account.SCALE;
@@ -18,18 +17,18 @@ import static com.task.rest.model.dbo.Account.SCALE;
 public class CreateAccountRequest {
     @DecimalMin("0.0")
     @Digits(integer = PRECISION, fraction = SCALE)
-    private BigDecimal initAmount;
+    private BigDecimal amount;
 
     public CreateAccountRequest() {
     }
 
     @JsonProperty
-    public BigDecimal getInitAmount() {
-        return initAmount;
+    public BigDecimal getAmount() {
+        return amount;
     }
 
-    public CreateAccountRequest(BigDecimal initAmount) {
-        this.initAmount = initAmount;
+    public CreateAccountRequest(BigDecimal amount) {
+        this.amount = amount;
     }
 
 }

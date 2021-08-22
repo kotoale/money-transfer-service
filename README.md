@@ -41,8 +41,8 @@ _**Start the application**_
 ```
 java -jar target/rest-service-1.0-SNAPSHOT.jar server account-rest-service-app.yaml
 ```
-###Now you can test in via curl
-####1. List all accounts
+### Now you can test in via curl
+#### 1. List all accounts
 **Request:**
 ```
 curl -H "Content-Type: application/json"  http://localhost:8080/accounts/list
@@ -51,7 +51,7 @@ curl -H "Content-Type: application/json"  http://localhost:8080/accounts/list
 ```
 {"accounts":[{"id":1,"amount":"0.00000000"},{"id":2,"amount":"200.00000000"},{"id":3,"amount":"300.00400000"},{"id":4,"amount":"123.32100000"},{"id":5,"amount":"777.00740000"}]}
 ``` 
-####2. Get account by id
+#### 2. Get account by id
 
 **Request:**
 ```
@@ -69,7 +69,7 @@ curl -H "Content-Type: application/json" http://localhost:8080/accounts?id=6
 ```
 There's no account with id: 6
 ```
-####3. Deposit money to account
+#### 3. Deposit money to account
 **Request:**
 ```
 curl -X PUT -H "Content-Type: application/json" -d '{"id": "3", "amount": "100.02"}' http://localhost:8080/accounts/deposit
@@ -122,7 +122,7 @@ curl -X PUT -H "Content-Type: application/json" -d '{"id": "3", "amount": "100.1
 ```
 {"account":{"id":3,"amount":"500.14745678"},"status":"UPDATED"}
 ```
-####4. Withdraw money from account
+#### 4. Withdraw money from account
 
 **Request:**
 ```
@@ -141,7 +141,7 @@ curl -X PUT -H "Content-Type: application/json" -d '{"id": "1", "amount": "100.1
 ```
 Current amount (0.00000000) is less than amount to withdraw (100.12345678) for the account with id = 1
 ```
-####5. Create account
+#### 5. Create account
 
 For POST request with empty body account with default init amount will be created
 
@@ -174,7 +174,7 @@ curl -H "Content-Type: application/json" -d '{"amount": null}' http://localhost:
 {"account":{"id":8,"amount":"100"},"status":"CREATED"}
 ```
 
-####6. Transfer money from one account to another
+#### 6. Transfer money from one account to another
 
 It is prohibited to transfer money to the same account
 ```
@@ -216,5 +216,3 @@ curl -X PUT -H "Content-Type: application/json" -d '{"fromId": "2","toId": "10",
 ```
 There's no account with id: 10
 ```
-    
-
